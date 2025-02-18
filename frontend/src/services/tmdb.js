@@ -1,4 +1,5 @@
 import { getPopularMoviesFromDB, getMovieDetailsFromDB } from './api';
+import { API_URL, API_KEY } from "../config";
 
 const VITE_API_TOKEN = import.meta.env.VITE_API_TOKEN;
 const VITE_BASE_URL = 'https://api.themoviedb.org/3';
@@ -43,11 +44,31 @@ const fetchFromAPI = async (endpoint, options = {}) => {
 
 // función para obtener las películas populares
 
-export const getPopularMovies = async (page = 1) => {
+export const getPopularMovies = async (page = 1, year = "", category = "", rating = "") => {
+  const url = new URL(`${API_URL}/movie/popular`);
+  url.searchParams.append("api_key", API_KEY);
+  url.searchParams.append("page", page);
+  if (year) url.searchParams.append("year", year);
+  if (category) url.searchParams.append("with_genres", category);
+  if (rating) url.searchParams.append("vote_average.gte", rating);
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Error en la petición");
+  }
+  return await response.json();
+};
+
+// función para obtener todas las películas
+
+export const getAllMovies = async (page = 1) => {
   try {
-    return await fetchFromAPI("/movie/popular", { page });
+    return await fetchFromAPI("/movie/sync", {
+      method: "POST",
+      params: { page }
+    });
   } catch (error) {
-    console.error('Error obteniendo películas populares:', error);
+    console.error('Error obteniendo todas las películas:', error);
     throw error;
   }
 };
