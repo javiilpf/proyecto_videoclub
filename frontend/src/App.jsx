@@ -4,23 +4,8 @@ import { FavoritesProvider } from "./context/FavoritesContext";
 import { Toaster } from "sonner";
 import ReviewsProvider from "./context/ReviewsContext";
 import { AuthProvider } from './context/AuthContext';
-import { useEffect } from 'react';
-import { syncMovies } from './services/api';
 
 const App = () => {
-  useEffect(() => {
-    const syncMoviesData = async () => {
-      try {
-        await syncMovies();
-        console.log('Películas sincronizadas correctamente');
-      } catch (error) {
-        console.error('Error sincronizando películas:', error);
-      }
-    };
-    
-    syncMoviesData();
-  }, []);
-
   return (
     <AuthProvider>
       <FavoritesProvider>
@@ -30,7 +15,7 @@ const App = () => {
         </ReviewsProvider>
       </FavoritesProvider>
     </AuthProvider>
-  ) ;
+  );
 };
 
 export default App;
