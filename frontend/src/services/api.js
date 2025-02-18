@@ -13,12 +13,12 @@ const fetchAPI = async (endpoint, options = {}) => {
     });
 
     if (!response.ok) {
-      throw new Error('Error en la petición');
+      throw new Error('Error en la petición al backend');
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error en fetchAPI:', error);
     throw error;
   }
 };

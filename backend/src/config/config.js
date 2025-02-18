@@ -4,9 +4,9 @@ dotenv.config();
 
 export const config = {
     PORT: process.env.PORT || 3000,
-    MONGODB_URI: process.env.MONGODB_URI,
-    JWT_SECRET: process.env.JWT_SECRET,
+    MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/videoclubdb',
+    JWT_SECRET: process.env.JWT_SECRET || 'tu_secreto',
     NODE_ENV: process.env.NODE_ENV || 'development',
-    TMDB_API_KEY: process.env.VITE_API_TOKEN,
-    TMDB_BASE_URL: process.env.VITE_BASE_URL
+    TMDB_API_KEY: process.env.TMDB_API_KEY,
+    TMDB_BASE_URL: process.env.TMDB_BASE_URL || 'https://api.themoviedb.org/3'
 }; 

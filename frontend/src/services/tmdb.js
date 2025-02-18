@@ -1,7 +1,7 @@
 import { getPopularMoviesFromDB, getMovieDetailsFromDB } from './api';
 
 const VITE_API_TOKEN = import.meta.env.VITE_API_TOKEN;
-const VITE_BASE_URL = import.meta.env.VITE_BASE_URL;
+const VITE_BASE_URL = 'https://api.themoviedb.org/3';
 const VITE_BASE_IMAGE_URL = 'https://image.tmdb.org/t/p';
 
 // objeto que me permite decidir el tamaño de las imágenes
@@ -20,19 +20,24 @@ export const getImageUrl = (path, size = IMAGES_SIZES.POSTER) => {
 
 const fetchFromAPI = async (endpoint, options = {}) => {
   try {
+    console.log('API Token:', VITE_API_TOKEN); // Para depuración
+    console.log('URL:', `${VITE_BASE_URL}${endpoint}`); // Para depuración
+    
     const response = await fetch(
       `${VITE_BASE_URL}${endpoint}?api_key=${VITE_API_TOKEN}&language=es-ES&${new URLSearchParams(
         options
       )}`
     );
+    
     if (!response.ok) {
-      throw new Error("Error en la petición");
+      const error = await response.json();
+      throw new Error(error.status_message || "Error en la petición a TMDB");
     }
-    const data = await response.json();
-    return data;
+    
+    return await response.json();
   } catch (error) {
-    console.error('Error en fetchFromAPI:', error);
-    throw error; // Lanzar el error en lugar de retornarlo
+    console.error('Error detallado:', error);
+    throw error;
   }
 };
 
@@ -40,12 +45,10 @@ const fetchFromAPI = async (endpoint, options = {}) => {
 
 export const getPopularMovies = async (page = 1) => {
   try {
-    // Primero intenta obtener del backend
-    return await getPopularMoviesFromDB(page);
+    return await fetchFromAPI("/movie/popular", { page });
   } catch (error) {
-    // Si falla, usa la API de TMDB directamente
-    console.log('Fallback a TMDB API');
-    return fetchFromAPI("/movie/popular", { page });
+    console.error('Error obteniendo películas populares:', error);
+    throw error;
   }
 };
 
@@ -58,7 +61,7 @@ export const getMovieDetails = async (id) => {
   } catch (error) {
     // Si falla, usa la API de TMDB directamente
     console.log('Fallback a TMDB API');
-    return fetchFromAPI(`/movies/${id}`);
+    return fetchFromAPI(`/movie/${id}`);
   }
 };
 
@@ -74,5 +77,10 @@ export const searchMovies = async (query, page = 1) => {
 };
 
 export const getMovieVideos = async (id) => {
-  return fetchFromAPI(`/movie/${id}/videos`);
+  try {
+    return await fetchFromAPI(`/movie/${id}/videos`);
+  } catch (error) {
+    console.error('Error obteniendo videos:', error);
+    throw error;
+  }
 };
