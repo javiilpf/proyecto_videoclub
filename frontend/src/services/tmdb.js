@@ -28,11 +28,11 @@ const fetchFromAPI = async (endpoint, options = {}) => {
     if (!response.ok) {
       throw new Error("Error en la petición");
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
   } catch (error) {
-    console.error(error);
-    // throw new Error("Error en la petición");
-    return error;
+    console.error('Error en fetchFromAPI:', error);
+    throw error; // Lanzar el error en lugar de retornarlo
   }
 };
 
