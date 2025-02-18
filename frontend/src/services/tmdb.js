@@ -1,6 +1,8 @@
+import { getPopularMoviesFromDB, getMovieDetailsFromDB } from './api';
+
 const VITE_API_TOKEN = import.meta.env.VITE_API_TOKEN;
 const VITE_BASE_URL = import.meta.env.VITE_BASE_URL;
-const VITE_BASE_IMAGE_URL = import.meta.env.VITE_BASE_IMAGE_URL;
+const VITE_BASE_IMAGE_URL = 'https://image.tmdb.org/t/p';
 
 // objeto que me permite decidir el tamaño de las imágenes
 export const IMAGES_SIZES = {
@@ -37,20 +39,38 @@ const fetchFromAPI = async (endpoint, options = {}) => {
 // función para obtener las películas populares
 
 export const getPopularMovies = async (page = 1) => {
-  // /movie/popular
-  return fetchFromAPI("/movie/popular", { page });
+  try {
+    // Primero intenta obtener del backend
+    return await getPopularMoviesFromDB(page);
+  } catch (error) {
+    // Si falla, usa la API de TMDB directamente
+    console.log('Fallback a TMDB API');
+    return fetchFromAPI("/movie/popular", { page });
+  }
 };
 
 // detalles de las películas
 
 export const getMovieDetails = async (id) => {
-  return fetchFromAPI(`/movie/${id}`);
+  try {
+    // Primero intenta obtener del backend
+    return await getMovieDetailsFromDB(id);
+  } catch (error) {
+    // Si falla, usa la API de TMDB directamente
+    console.log('Fallback a TMDB API');
+    return fetchFromAPI(`/movies/${id}`);
+  }
 };
 
 // búsqueda de una película por un query de busqueda
 
 export const searchMovies = async (query, page = 1) => {
-  return fetchFromAPI("/search/movie", { query, page });
+  try {
+    return await fetchFromAPI("/search/movie", { query, page });
+  } catch (error) {
+    console.error('Error en la búsqueda:', error);
+    throw new Error('Error al buscar películas');
+  }
 };
 
 export const getMovieVideos = async (id) => {

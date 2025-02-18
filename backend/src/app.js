@@ -10,8 +10,11 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
+
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: allowedOrigins,
     credentials: true
 }));
 

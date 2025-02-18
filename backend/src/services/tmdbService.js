@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { config } from '../config/config.js';
 
 const tmdbApi = axios.create({
-  baseURL: process.env.VITE_BASE_URL,
+  baseURL: config.TMDB_BASE_URL,
   params: {
-    api_key: process.env.VITE_API_TOKEN,
+    api_key: config.TMDB_API_KEY,
     language: 'es-ES'
   }
 });

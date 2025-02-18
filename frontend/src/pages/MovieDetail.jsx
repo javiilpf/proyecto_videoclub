@@ -8,10 +8,13 @@ const MovieDetail = () => {
   const [movie, setMovie] = useState(null);
   const [trailer, setTrailer] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Fetch movie details from tmdb api using movieID
   const fetchData = async () => {
     try {
+      setLoading(true);
       const result = await getMovieDetails(id);
       setMovie(result);
 
@@ -21,8 +24,11 @@ const MovieDetail = () => {
       } else {
         console.log("No se encontró ningún trailer");
       }
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching movie:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -36,7 +42,9 @@ const MovieDetail = () => {
     setReviews(movieReviews);
   }, [id]);
 
-  if (!movie) return <p>Cargando...</p>;
+  if (loading) return <p>Cargando...</p>;
+  if (error) return <p>Error: {error}</p>;
+  if (!movie) return <p>No se encontró la película</p>;
 
   return (
     <div
@@ -60,7 +68,7 @@ const MovieDetail = () => {
             <div className="mt-4">
               <h3 className="text-lg font-semibold">Géneros</h3>
               <p className="text-gray-300">
-                {movie.genres.map((genre) => genre.name).join(", ")}
+                {movie.genres?.map((genre) => genre.name).join(", ")}
               </p>
             </div>
           </div>

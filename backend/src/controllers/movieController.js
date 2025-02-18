@@ -71,7 +71,17 @@ export const getMovies = async (req, res) => {
     ]);
 
     res.json({
-      results: movies,
+      results: movies.map(movie => ({
+        id: movie.tmdbId,
+        title: movie.titulo,
+        overview: movie.descripcion,
+        poster_path: movie.poster_path,
+        backdrop_path: movie.backdrop_path,
+        release_date: movie.fecha_lanzamiento,
+        vote_average: movie.puntuacion,
+        popularity: movie.popularidad,
+        genres: movie.generos
+      })),
       page: parseInt(page),
       total_pages: Math.ceil(total / limit)
     });
@@ -89,10 +99,55 @@ export const getMovieById = async (req, res) => {
     if (!movie) {
       return res.status(404).json({ mensaje: 'Película no encontrada' });
     }
-    res.json(movie);
+    
+    // Transformar al formato esperado por el frontend
+    const movieResponse = {
+      id: movie.tmdbId,
+      title: movie.titulo,
+      overview: movie.descripcion,
+      poster_path: movie.poster_path,
+      backdrop_path: movie.backdrop_path,
+      release_date: movie.fecha_lanzamiento,
+      vote_average: movie.puntuacion,
+      popularity: movie.popularidad,
+      genres: movie.generos,
+      videos: movie.videos
+    };
+    
+    res.json(movieResponse);
   } catch (error) {
     res.status(500).json({ 
       mensaje: 'Error obteniendo película', 
+      error: error.message 
+    });
+  }
+};
+
+export const searchMovies = async (req, res) => {
+  try {
+    const { query } = req.query;
+    const movies = await Movie.find({
+      $or: [
+        { titulo: { $regex: query, $options: 'i' } },
+        { descripcion: { $regex: query, $options: 'i' } }
+      ]
+    }).limit(20);
+
+    res.json({
+      results: movies.map(movie => ({
+        id: movie.tmdbId,
+        title: movie.titulo,
+        overview: movie.descripcion,
+        poster_path: movie.poster_path,
+        backdrop_path: movie.backdrop_path,
+        release_date: movie.fecha_lanzamiento,
+        vote_average: movie.puntuacion,
+        popularity: movie.popularidad
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      mensaje: 'Error buscando películas', 
       error: error.message 
     });
   }

@@ -38,7 +38,7 @@ const MovieCard = ({ movie, onRemove }) => {
           <img
             src={getImageUrl(movie.poster_path)}
             alt={movie.title}
-            className="object-cover w-full h-full rounded-lg shadow-lg"
+            className="w-full h-auto rounded-lg"
           />
         </div>
         <div className="p-4">

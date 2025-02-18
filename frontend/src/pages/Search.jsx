@@ -12,14 +12,21 @@ const Search = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!search.trim()) return;
+    
     setLoading(true);
     setError(null);
 
     try {
       const data = await searchMovies(search);
-      setResults(data.results);
+      if (data && data.results) {
+        setResults(data.results);
+      } else {
+        setResults([]);
+      }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Error en la búsqueda');
+      console.error('Error searching movies:', err);
     } finally {
       setLoading(false);
     }
@@ -36,27 +43,35 @@ const Search = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="flex-1 p-2 border rounded-lg"
+            minLength={2}
+            required
           />
           <button
             type="submit"
-            className="bg-sky-700 text-white hover:bg-sky-600 px-4 py-2 rounded-lg"
+            className="bg-sky-700 text-white hover:bg-sky-600 px-4 py-2 rounded-lg disabled:opacity-50"
+            disabled={loading || !search.trim()}
           >
-            Buscar
+            {loading ? 'Buscando...' : 'Buscar'}
           </button>
         </div>
       </form>
-      {loading && <p>Cargando...</p>}
-      {error && <p>Error: {error}</p>}
+      
+      {loading && <div className="text-center mt-8">Buscando películas...</div>}
+      {error && (
+        <div className="text-red-500 text-center mt-8">
+          Error: {error}
+        </div>
+      )}
+      
       <div className="mt-6">
-        {results.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-              {results.map((movie) => (
-                  <MovieCard key={movie.id} movie={movie} />
-              ))}
-            </div>
-        
-        ) : (
-          <p>No se encontraron resultados.</p>
+        {!loading && !error && results.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+            {results.map((movie) => (
+              <MovieCard key={movie.id} movie={movie} />
+            ))}
+          </div>
+        ) : !loading && !error && (
+          <p className="text-center">No se encontraron resultados.</p>
         )}
       </div>
     </div>
