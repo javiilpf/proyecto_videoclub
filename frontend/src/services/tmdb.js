@@ -1,5 +1,4 @@
 import { getPopularMoviesFromDB, getMovieDetailsFromDB } from './api';
-import { API_URL, API_KEY } from "../config";
 
 const VITE_API_TOKEN = import.meta.env.VITE_API_TOKEN;
 const VITE_BASE_URL = 'https://api.themoviedb.org/3';
@@ -21,42 +20,51 @@ export const getImageUrl = (path, size = IMAGES_SIZES.POSTER) => {
 
 const fetchFromAPI = async (endpoint, options = {}) => {
   try {
-    console.log('API Token:', VITE_API_TOKEN); // Para depuración
-    console.log('URL:', `${VITE_BASE_URL}${endpoint}`); // Para depuración
+    let url = `${VITE_BASE_URL}${endpoint}?api_key=${VITE_API_TOKEN}&language=es-ES`;
     
-    const response = await fetch(
-      `${VITE_BASE_URL}${endpoint}?api_key=${VITE_API_TOKEN}&language=es-ES&${new URLSearchParams(
-        options
-      )}`
-    );
+    // Añadir parámetros adicionales si existen
+    if (Object.keys(options).length > 0) {
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(options)) {
+        if (value !== undefined && value !== null && value !== '') {
+          params.append(key, value);
+        }
+      }
+      url += `&${params.toString()}`;
+    }
+
+    const response = await fetch(url);
     
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.status_message || "Error en la petición a TMDB");
+      throw new Error(`Error HTTP: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    return data;
   } catch (error) {
-    console.error('Error detallado:', error);
-    throw error;
+    console.error('Error en fetchFromAPI:', error);
+    throw new Error('Error al obtener datos de TMDB');
   }
 };
 
 // función para obtener las películas populares
 
-export const getPopularMovies = async (page = 1, year = "", category = "", rating = "") => {
-  const url = new URL(`${API_URL}/movie/popular`);
-  url.searchParams.append("api_key", API_KEY);
-  url.searchParams.append("page", page);
-  if (year) url.searchParams.append("year", year);
-  if (category) url.searchParams.append("with_genres", category);
-  if (rating) url.searchParams.append("vote_average.gte", rating);
+export const getPopularMovies = async (page = 1, filters = {}) => {
+  try {
+    const options = {
+      page,
+      sort_by: 'popularity.desc',
+      ...filters.year && { primary_release_year: filters.year },
+      ...filters.rating && { 'vote_average.gte': filters.rating },
+      ...filters.genre && { with_genres: filters.genre }
+    };
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("Error en la petición");
+    const data = await fetchFromAPI('/discover/movie', options);
+    return data;
+  } catch (error) {
+    console.error('Error obteniendo películas populares:', error);
+    throw error;
   }
-  return await response.json();
 };
 
 // función para obtener todas las películas
@@ -75,31 +83,29 @@ export const getAllMovies = async (page = 1) => {
 
 // detalles de las películas
 
-export const getMovieDetails = async (id) => {
+export const getMovieDetails = async (movieId) => {
   try {
-    // Primero intenta obtener del backend
-    return await getMovieDetailsFromDB(id);
+    return await fetchFromAPI(`/movie/${movieId}`);
   } catch (error) {
-    // Si falla, usa la API de TMDB directamente
-    console.log('Fallback a TMDB API');
-    return fetchFromAPI(`/movie/${id}`);
+    console.error('Error obteniendo detalles de la película:', error);
+    throw error;
   }
 };
 
 // búsqueda de una película por un query de busqueda
 
-export const searchMovies = async (query, page = 1) => {
+export const searchMovies = async (query) => {
   try {
-    return await fetchFromAPI("/search/movie", { query, page });
+    return await fetchFromAPI('/search/movie', { query });
   } catch (error) {
     console.error('Error en la búsqueda:', error);
-    throw new Error('Error al buscar películas');
+    throw error;
   }
 };
 
-export const getMovieVideos = async (id) => {
+export const getMovieVideos = async (movieId) => {
   try {
-    return await fetchFromAPI(`/movie/${id}/videos`);
+    return await fetchFromAPI(`/movie/${movieId}/videos`);
   } catch (error) {
     console.error('Error obteniendo videos:', error);
     throw error;

@@ -1,49 +1,64 @@
+import { useState } from 'react';
 import { useReview } from "../context/ReviewsContext";
+import { toast } from "sonner";
 
-const ReviewForm = ({ id }) => {
+const ReviewForm = ({ movieId }) => {
   const { addReview } = useReview();
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const formData = new FormData(e.target);
+      const reviewData = {
+        movieId: movieId,
+        texto: formData.get("reseña"),
+        estrellas: Number(formData.get("ReviewStar"))
+      };
+      
+      await addReview(reviewData);
+      e.target.reset();
+      toast.success("Reseña publicada correctamente");
+    } catch (error) {
+      console.error('Error al publicar reseña:', error);
+      toast.error("Error al publicar la reseña");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          const review = {
-            id: Date.now(),
-            movieId: id,
-            texto: formData.get("reseña"),
-            estrellas: formData.get("ReviewStar"),
-          };
-          addReview(review);
-          e.target.reset();
-        }}
-        className="flex flex-col space-y-4"
+    <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+      <select 
+        name="ReviewStar" 
+        className="p-2 border rounded text-gray-700"
+        required
       >
-        <div>
-          <select name="ReviewStar" id="ReviewStar">
-            <option value="1">1⭐</option>
-            <option value="2">2⭐</option>
-            <option value="3">3⭐</option>
-            <option value="4">4⭐</option>
-            <option value="5">5⭐</option>
-            <option value="6">6⭐</option>
-            <option value="7">7⭐</option>
-            <option value="8">8⭐</option>
-            <option value="9">9⭐</option>
-            <option value="10">10⭐</option>
-          </select>
-        </div>
-        <div>
-          <textarea id="reseña" name="reseña" placeholder="Introduce tu reseña aquí" />
-        </div>
-        <div>
-          <button type="submit">Publicar</button>
-        </div>
-      </form>
-    </div>
+        {[...Array(10)].map((_, i) => (
+          <option key={i + 1} value={i + 1}>
+            {i + 1} ⭐
+          </option>
+        ))}
+      </select>
+      
+      <textarea 
+        name="reseña" 
+        placeholder="Escribe tu reseña aquí" 
+        className="p-2 border rounded text-gray-700"
+        required
+      />
+      
+      <button 
+        type="submit" 
+        disabled={loading}
+        className="bg-sky-600 text-white py-2 px-4 rounded hover:bg-sky-700 disabled:opacity-50"
+      >
+        {loading ? "Publicando..." : "Publicar reseña"}
+      </button>
+    </form>
   );
 };
 
-export default ReviewForm;
-
+export default ReviewForm; 

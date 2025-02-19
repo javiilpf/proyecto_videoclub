@@ -1,81 +1,102 @@
 import { useParams } from "react-router-dom";
 import { getMovieDetails, getImageUrl, getMovieVideos } from "../services/tmdb";
 import { useEffect, useState } from "react";
+import { useReview } from "../context/ReviewsContext";
 import ReviewForm from "../components/ReviewForm";
+import { useFavorites } from "../context/FavoritesContext";
 
 const MovieDetail = () => {
   const { id } = useParams();
+  const { reviews, getMovieReviews } = useReview();
   const [movie, setMovie] = useState(null);
   const [trailer, setTrailer] = useState(null);
-  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Fetch movie details from tmdb api using movieID
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const result = await getMovieDetails(id);
-      setMovie(result);
-
-      const trailerResult = await getMovieVideos(id);
-      if (trailerResult.results && trailerResult.results.length > 0) {
-        setTrailer(trailerResult.results[0]);
-      } else {
-        console.log("No se encontró ningún trailer");
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error fetching movie:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { addToFavorites, removeFromFavorites, favorites } = useFavorites();
+  const isFavorite = favorites.some(f => f?.id === Number(id));
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [movieData, trailerData] = await Promise.all([
+          getMovieDetails(id),
+          getMovieVideos(id)
+        ]);
+        
+        setMovie(movieData);
+        if (trailerData.results?.length > 0) {
+          setTrailer(trailerData.results[0]);
+        }
+      } catch (err) {
+        setError(err.message);
+        console.error('Error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
   }, [id]);
 
   useEffect(() => {
-    const storedReviews = JSON.parse(localStorage.getItem("reviews")) || [];
-    const movieReviews = storedReviews.filter(review => review.movieId === id);
-    setReviews(movieReviews);
-  }, [id]);
+    if (getMovieReviews) {
+      getMovieReviews(id);
+    }
+  }, [id, getMovieReviews]);
 
-  if (loading) return <p>Cargando...</p>;
-  if (error) return <p>Error: {error}</p>;
-  if (!movie) return <p>No se encontró la película</p>;
+  const handleFavoriteClick = () => {
+    if (isFavorite) {
+      removeFromFavorites(Number(id));
+    } else {
+      addToFavorites(movie);
+    }
+  };
+
+  if (loading) return <div>Cargando...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!movie) return <div>No se encontró la película</div>;
 
   return (
-    <div
-      className="relative bg-cover bg-center min-h-screen text-white p-6"
-      style={{ backgroundImage: `url(${getImageUrl(movie.backdrop_path)})` }}
-    >
-      <div className="bg-black bg-opacity-70 p-6 rounded-lg shadow-lg max-w-3xl mx-auto">
-        <div className="mb-2 top-2 left-2 bg-black bg-opacity-50 text-white py-1 px-2 rounded">
-          ❤️
-        </div>
-        <div className="flex flex-col md:flex-row">
+    <div className="container mx-auto px-4 py-8">
+      <div className="bg-gray-800 rounded-lg p-6">
+        <div className="md:flex relative">
+          <div className="absolute top-2 right-2 flex items-center gap-4 z-10">
+            <span className="bg-gray-900 px-3 py-1 rounded-full text-yellow-400 flex items-center">
+              ⭐ {movie.vote_average?.toFixed(1)}
+            </span>
+            <button
+              onClick={handleFavoriteClick}
+              className={`p-2 rounded-full transition-colors ${
+                isFavorite 
+                  ? 'bg-red-600 hover:bg-red-700' 
+                  : 'bg-gray-600 hover:bg-red-500'
+              }`}
+            >
+              {isFavorite ? '❤️' : '🤍'}
+            </button>
+          </div>
           <img
             src={getImageUrl(movie.poster_path)}
             alt={movie.title}
             className="w-64 h-auto rounded-lg shadow-md"
           />
           <div className="md:ml-6 mt-4 md:mt-0">
-            <h2 className="text-3xl font-bold">{movie.title}</h2>
+            <h2 className="text-3xl font-bold text-white">{movie.title}</h2>
             <p className="text-sm text-gray-300">{movie.release_date}</p>
             <p className="mt-4 text-gray-200">{movie.overview}</p>
             <div className="mt-4">
-              <h3 className="text-lg font-semibold">Géneros</h3>
+              <h3 className="text-lg font-semibold text-white">Géneros</h3>
               <p className="text-gray-300">
                 {movie.genres?.map((genre) => genre.name).join(", ")}
               </p>
             </div>
           </div>
         </div>
-        {trailer && trailer.key && (
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold">Trailer</h3>
+
+        {trailer && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-white mb-4">Trailer</h3>
             <iframe
               className="w-full h-64 md:h-96 rounded-lg"
               src={`https://www.youtube.com/embed/${trailer.key}`}
@@ -84,27 +105,23 @@ const MovieDetail = () => {
             ></iframe>
           </div>
         )}
-        <div>
-          <h2 className="text-2xl font-semibold mt-6">¡Deja tu reseña!</h2>
-          <div className="grid grid-cols-3 gap-4">
-            <ReviewForm id={id} />
-          </div>
-        </div>
-        <div className="mt-6">
-          <h2 className="text-2xl font-semibold">Comentarios</h2>
-          {reviews.length > 0 ? (
-            reviews.map((review) => (
-              <div key={review.id} className="border-b py-4">
-                <div className="flex items-center">
-                  <div>
-                    <p className="text-gray-400">{review.texto}</p>
-                    <p className="text-gray-300">Puntuación: {review.estrellas}⭐️ </p>
+
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold text-white mb-4">Reseñas</h3>
+          <ReviewForm movieId={id} />
+          {reviews?.length > 0 ? (
+            <div className="space-y-4">
+              {reviews.map((review, index) => (
+                <div key={index} className="bg-gray-700 p-4 rounded-lg">
+                  <p className="text-gray-200">{review.texto}</p>
+                  <div className="text-yellow-400 mt-2">
+                    {"⭐".repeat(review.estrellas)}
                   </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           ) : (
-            <p>No hay comentarios para esta película.</p>
+            <p className="text-gray-400">No hay reseñas todavía</p>
           )}
         </div>
       </div>

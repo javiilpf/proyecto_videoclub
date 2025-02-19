@@ -1,62 +1,33 @@
-import { createContext, useContext, useState } from 'react';
-import { login, register, logout } from '../services/api';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { verifyAuth } from '../services/api';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleLogin = async (credentials) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await login(credentials);
-      setUser(response.user);
-      return response;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await verifyAuth();
+        setIsAuthenticated(response.authenticated !== false);
+      } catch (error) {
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleRegister = async (userData) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await register(userData);
-      return response;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+    checkAuth();
+  }, []);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      setUser(null);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+  if (loading) {
+    return <div>Cargando...</div>;
+  }
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        loading, 
-        error, 
-        login: handleLogin, 
-        register: handleRegister, 
-        logout: handleLogout 
-      }}
-    >
+    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
@@ -65,7 +36,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+    throw new Error('useAuth debe usarse dentro de AuthProvider');
   }
   return context;
 }; 

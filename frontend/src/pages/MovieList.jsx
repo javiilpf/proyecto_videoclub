@@ -4,28 +4,25 @@ import MovieCard from "../components/MovieCard";
 import { useFetch } from "../hooks/useFetch";
 import { getPopularMovies } from "../services/tmdb";
 import Spinner from "../components/Spinner";
+import MovieFilters from '../components/MovieFilters';
 
 const MovieList = () => {
   const [page, setPage] = useState(1);
-  const [year, setYear] = useState("");
-  const [category, setCategory] = useState("");
-  const [rating, setRating] = useState("");
+  const [filters, setFilters] = useState({});
 
   const { data, loading, error } = useFetch(
-    () => getPopularMovies(page, year, category, rating),
-    [page, year, category, rating]
+    () => getPopularMovies(page, filters),
+    [page, filters]
   );
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setPage(1); // Resetear a la primera página cuando cambian los filtros
+  };
 
   const handlePageChange = (newPage) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setPage(newPage);
-  };
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "year") setYear(value);
-    if (name === "category") setCategory(value);
-    if (name === "rating") setRating(value);
   };
 
   if (error) {
@@ -54,33 +51,7 @@ const MovieList = () => {
       </header>
 
       <section>
-        <form className="flex justify-center gap-4 mb-8">
-          <input
-            type="number"
-            name="year"
-            placeholder="Año"
-            value={year}
-            onChange={handleFilterChange}
-            className="px-4 py-2 rounded-lg border border-gray-300"
-          />
-          <input
-            type="text"
-            name="category"
-            placeholder="Categoría"
-            value={category}
-            onChange={handleFilterChange}
-            className="px-4 py-2 rounded-lg border border-gray-300"
-          />
-          <input
-            type="number"
-            name="rating"
-            placeholder="Valoración"
-            value={rating}
-            onChange={handleFilterChange}
-            className="px-4 py-2 rounded-lg border border-gray-300"
-          />
-          
-        </form>
+        <MovieFilters onFilterChange={handleFilterChange} />
 
         {loading ? (
           <Spinner />

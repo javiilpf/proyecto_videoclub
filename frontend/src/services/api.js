@@ -1,23 +1,47 @@
-import { API_URL } from '../config/api.config';
+const API_URL = 'http://localhost:3000/api';
 
 // Función auxiliar para manejar las peticiones
-const fetchAPI = async (endpoint, options = {}) => {
+export const fetchAPI = async (endpoint, options = {}) => {
   try {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
+    const defaultOptions = {
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      credentials: 'include', // Importante para las cookies
+        'Accept': 'application/json'
+      }
+    };
+
+    console.log('Fetching:', `${API_URL}${endpoint}`, {
+      ...defaultOptions,
+      ...options
     });
 
-    if (!response.ok) {
-      throw new Error('Error en la petición al backend');
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...defaultOptions,
+      ...options,
+      headers: {
+        ...defaultOptions.headers,
+        ...options.headers
+      }
+    });
+
+    console.log('Response status:', response.status);
+
+    // Para endpoints de verificación, manejamos el 401 de forma especial
+    if (endpoint === '/auth/verify' && response.status === 401) {
+      return { authenticated: false };
     }
 
-    return await response.json();
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.mensaje || 'Error en la petición');
+    }
+
+    return response.json();
   } catch (error) {
+    if (endpoint === '/auth/verify') {
+      return { authenticated: false };
+    }
     console.error('Error en fetchAPI:', error);
     throw error;
   }
@@ -33,44 +57,53 @@ export const getMovieDetailsFromDB = async (id) => {
 };
 
 export const syncMovies = async () => {
-  try {
-    return await fetchAPI('/movies/sync', {
-      method: 'POST',
-      credentials: 'include'
-    });
-  } catch (error) {
-    console.error('Error sincronizando películas:', error);
-    throw error;
-  }
+  return fetchAPI('/movies/sync', {
+    method: 'POST'
+  });
+};
+
+export const getAllMovies = async (page = 1) => {
+  return fetchAPI(`/movies?page=${page}`);
 };
 
 // Servicios de autenticación
 export const login = async (credentials) => {
-  try {
-    const response = await fetchAPI('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-    
-    // Después de un login exitoso, sincronizar películas
-    await syncMovies();
-    
-    return response;
-  } catch (error) {
-    console.error('Error en login:', error);
-    throw error;
-  }
+  return fetchAPI('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(credentials)
+  });
+};
+
+export const verifyAuth = async () => {
+  return fetchAPI('/auth/verify');
 };
 
 export const register = async (userData) => {
+  const { confirmPassword, ...registerData } = userData; // Eliminamos confirmPassword
   return fetchAPI('/auth/register', {
     method: 'POST',
-    body: JSON.stringify(userData),
+    body: JSON.stringify(registerData)
   });
 };
 
 export const logout = async () => {
   return fetchAPI('/auth/logout', {
-    method: 'POST',
+    method: 'POST'
   });
+};
+
+// Funciones específicas para reseñas
+export const getMovieReviews = async (movieId) => {
+  return fetchAPI(`/reviews/${movieId}`);
+};
+
+export const createReview = async (reviewData) => {
+  return fetchAPI('/reviews', {
+    method: 'POST',
+    body: JSON.stringify(reviewData)
+  });
+};
+
+export const getAllReviews = async () => {
+  return fetchAPI('/reviews/all');
 }; 
