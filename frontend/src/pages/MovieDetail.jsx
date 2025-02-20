@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { getMovieDetails, getImageUrl, getMovieVideos } from "../services/tmdb";
+import { getMovieDetails, getImageUrl } from "../services/tmdb";
 import { useEffect, useState } from "react";
 import { useReview } from "../context/ReviewsContext";
 import ReviewForm from "../components/ReviewForm";
@@ -20,7 +20,8 @@ const MovieDetail = () => {
         setLoading(true);
         setError(null);
         const movieData = await getMovieDetails(id);
-        console.log('Movie data in component:', movieData); // Para depuración
+        console.log('Movie Data:', movieData);
+        console.log('Videos:', movieData.videos);
         setMovie(movieData);
         
         if (getMovieReviews) {
@@ -35,13 +36,35 @@ const MovieDetail = () => {
     };
 
     fetchData();
-  }, [id]);
+  }, [id, getMovieReviews]);
+
+  const renderTrailer = () => {
+    if (!movie?.videos || movie.videos.length === 0) {
+      return (
+        <div className="text-center text-gray-500 p-4 bg-gray-700 rounded-lg">
+          <p>No hay trailers disponibles</p>
+        </div>
+      );
+    }
+
+    const trailer = movie.videos[0];
+    return (
+      <div className="relative pt-[56.25%]">
+        <iframe
+          src={`https://www.youtube.com/embed/${trailer.key}?autoplay=0`}
+          title={trailer.name}
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="absolute top-0 left-0 w-full h-full rounded-lg"
+        ></iframe>
+      </div>
+    );
+  };
 
   if (loading) return <div className="text-center py-8">Cargando...</div>;
   if (error) return <div className="text-center py-8 text-red-500">Error: {error}</div>;
   if (!movie) return <div className="text-center py-8">No se encontró la película</div>;
-
-  const trailer = movie.videos?.[0];
 
   return (
     <div className="relative min-h-screen">
@@ -87,20 +110,10 @@ const MovieDetail = () => {
             </div>
           </div>
 
-          {trailer && (
-            <div className="mt-8 container mx-auto px-4">
-              <h3 className="text-2xl font-bold mb-4 text-white">Trailer</h3>
-              <div className="aspect-w-16 aspect-h-9">
-                <iframe
-                  src={`https://www.youtube.com/embed/${trailer.key}`}
-                  title="Movie Trailer"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-96 rounded-lg"
-                ></iframe>
-              </div>
-            </div>
-          )}
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Trailer</h2>
+            {renderTrailer()}
+          </div>
 
           <div className="mt-8">
             <h3 className="text-lg font-semibold text-white mb-4">Reseñas</h3>

@@ -20,18 +20,14 @@ export const getImageUrl = (path, size = IMAGES_SIZES.POSTER) => {
 
 const fetchFromAPI = async (endpoint, options = {}) => {
   try {
-    let url = `${VITE_BASE_URL}${endpoint}?api_key=${VITE_API_TOKEN}&language=es-ES`;
+    let url = `${VITE_BASE_URL}${endpoint}`;
+    const params = new URLSearchParams({
+      api_key: VITE_API_TOKEN,
+      language: 'es-ES',
+      ...options
+    });
     
-    // Añadir parámetros adicionales si existen
-    if (Object.keys(options).length > 0) {
-      const params = new URLSearchParams();
-      for (const [key, value] of Object.entries(options)) {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value);
-        }
-      }
-      url += `&${params.toString()}`;
-    }
+    url += `?${params.toString()}`;
 
     const response = await fetch(url);
     
@@ -85,17 +81,24 @@ export const getAllMovies = async (page = 1) => {
 
 export const getMovieDetails = async (movieId) => {
   try {
-    const [movieDetails, videosResponse] = await Promise.all([
+    const [details, credits, videos] = await Promise.all([
       fetchFromAPI(`/movie/${movieId}`),
+      fetchFromAPI(`/movie/${movieId}/credits`),
       fetchFromAPI(`/movie/${movieId}/videos`)
     ]);
 
-    const trailers = videosResponse.results?.filter(
-      video => video.site === "YouTube" && video.type === "Trailer"
+    // Filtrar solo trailers oficiales en español o inglés
+    const trailers = videos.results?.filter(
+      video => 
+        video.site === "YouTube" && 
+        video.official &&
+        (video.type === "Trailer" || video.type === "Teaser") &&
+        (video.iso_639_1 === "es" || video.iso_639_1 === "en")
     ) || [];
 
     return {
-      ...movieDetails,
+      ...details,
+      cast: credits.cast?.slice(0, 6) || [], // Limitamos a 6 actores
       videos: trailers
     };
   } catch (error) {
@@ -119,7 +122,7 @@ export const getMovieVideos = async (movieId) => {
   try {
     return await fetchFromAPI(`/movie/${movieId}/videos`);
   } catch (error) {
-    console.error('Error obteniendo videos:', error);
+    console.error('Error fetching movie videos:', error);
     throw error;
   }
 };
