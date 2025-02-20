@@ -21,19 +21,32 @@ export const fetchPopularMovies = async (page = 1) => {
 
 export const fetchMovieDetails = async (movieId) => {
   try {
-    const [movieDetails, videosResponse] = await Promise.all([
+    const [movieDetails, videosResponse, credits] = await Promise.all([
       tmdbApi.get(`/movie/${movieId}`),
-      tmdbApi.get(`/movie/${movieId}/videos`)
+      tmdbApi.get(`/movie/${movieId}/videos`),
+      tmdbApi.get(`/movie/${movieId}/credits`)
     ]);
-
-    const videos = videosResponse.data.results || [];
 
     return {
       ...movieDetails.data,
-      videos: videos.filter(video => video.site === 'YouTube')
+      videos: videosResponse.data.results || [],
+      cast: credits.data.cast || []
     };
   } catch (error) {
-    console.error('Error obteniendo detalles de película:', error);
-    throw error;
+    console.error('Error obteniendo detalles:', error);
+    return {
+      videos: [],
+      cast: []
+    };
+  }
+};
+
+export const fetchMovieCredits = async (movieId) => {
+  try {
+    const response = await tmdbApi.get(`/movie/${movieId}/credits`);
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo créditos:', error);
+    return { cast: [] };
   }
 };

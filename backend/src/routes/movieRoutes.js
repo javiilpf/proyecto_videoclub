@@ -1,12 +1,10 @@
 import express from 'express';
-import { syncPopularMovies, getMovies, getMovieById, searchMovies } from '../controllers/movieController.js';
-import { authMiddleware } from '../middleware/authMiddleware.js';
+import * as movieController from '../controllers/movieController.js';
 
 const router = express.Router();
 
-router.post('/sync', authMiddleware, syncPopularMovies);
-router.get('/popular', getMovies);
-router.get('/:id', getMovieById);
-router.get('/search', searchMovies);
+router.get('/sync', movieController.syncPopularMovies);
+router.get('/popular', movieController.getMovies);
+router.get('/:id', movieController.getMovieById);
 
 export default router;

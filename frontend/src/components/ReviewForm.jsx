@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useReview } from "../context/ReviewsContext";
-import { toast } from "sonner";
+import { useToast } from "../context/ToastContext";
 
 const ReviewForm = ({ movieId }) => {
   const { addReview } = useReview();
   const [loading, setLoading] = useState(false);
+  const { toastReviewMessage, showErrorToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,10 +21,10 @@ const ReviewForm = ({ movieId }) => {
       
       await addReview(reviewData);
       e.target.reset();
-      toast.success("Reseña publicada correctamente");
+      toastReviewMessage();
     } catch (error) {
       console.error('Error al publicar reseña:', error);
-      toast.error("Error al publicar la reseña");
+      showErrorToast("Error al publicar la reseña");
     } finally {
       setLoading(false);
     }

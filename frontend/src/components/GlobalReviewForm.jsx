@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useReview } from "../context/ReviewsContext";
-import { toast } from "sonner";
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 
 const GlobalReviewForm = () => {
   const { addReview } = useReview();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { toastReviewMessage, showErrorToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,11 +23,11 @@ const GlobalReviewForm = () => {
       
       await addReview(reviewData);
       e.target.reset();
-      toast.success("Reseña publicada correctamente");
+      toastReviewMessage();
       navigate(`/pelicula/${reviewData.movieId}`);
     } catch (error) {
       console.error('Error al publicar reseña:', error);
-      toast.error("Error al publicar la reseña");
+      showErrorToast("Error al publicar la reseña");
     } finally {
       setLoading(false);
     }

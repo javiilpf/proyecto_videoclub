@@ -1,9 +1,9 @@
-import { createContext, useContext, useState } from "react";
-import { createReview, getMovieReviews as fetchMovieReviews, getAllReviews as fetchAllReviews } from "../services/api.js";
+import { createContext, useContext, useState, useCallback } from "react";
+import { createReview, getAllReviews as fetchAllReviews } from "../services/api.js";
 
 const ReviewsContext = createContext();
 
-const ReviewsProvider = ({ children }) => {
+export const ReviewsProvider = ({ children }) => {
   const [reviews, setReviews] = useState([]);
 
   const addReview = async (reviewData) => {
@@ -17,16 +17,15 @@ const ReviewsProvider = ({ children }) => {
     }
   };
 
-  const getMovieReviews = async (movieId) => {
+  const getMovieReviews = useCallback(async (movieId) => {
     try {
-      const movieReviews = await fetchMovieReviews(movieId);
-      setReviews(movieReviews);
-      return movieReviews;
+      const response = await fetch(`/api/reviews/${movieId}`);
+      const data = await response.json();
+      setReviews(data);
     } catch (error) {
-      console.error('Error obteniendo reseñas:', error);
-      throw error;
+      console.error('Error fetching reviews:', error);
     }
-  };
+  }, []);
 
   const getAllReviews = async () => {
     try {

@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { toast } from "sonner";
+import { useToast } from "./ToastContext";
 
 const FavoritesContext = createContext();
 
 export function FavoritesProvider({ children }) {
     const [favorites, setFavorites] = useState([]);
+    const { showFavoriteAddedToast, showFavoriteRemovedToast, showErrorToast } = useToast();
 
     // Cargar favoritos desde localStorage al iniciar
     useEffect(() => {
@@ -16,51 +17,30 @@ export function FavoritesProvider({ children }) {
 
     const addToFavorites = (movie) => {
         if (favorites.some(m => m?.id === movie.id)) {
-            toast.error("La película ya está en favoritos", {
-                style: {
-                    background: 'red',
-                    color: 'white',
-                    border: "1px solid black",
-                },
-                icon: "♥️",
-            });
+            showErrorToast("La película ya está en favoritos");
             return;
         }
 
         const updatedFavorites = [...favorites, movie];
         setFavorites(updatedFavorites);
         localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
-
-        toast.success("Película añadida a favoritos", {
-            style: {
-                background: 'yellow',
-                color: 'black',
-                border: "1px solid black",
-            },
-            icon: "♥️",
-        });
+        showFavoriteAddedToast();
     };
 
     const removeFromFavorites = (movieId) => {
         const updatedFavorites = favorites.filter(m => m.id !== movieId);
         setFavorites(updatedFavorites);
         localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
-
-        toast.success("Película eliminada de favoritos", {
-            style: {
-                background: 'green',
-                color: 'white',
-                border: "1px solid black",
-            },
-            icon: "💔",
-        });
+        showFavoriteRemovedToast();
     };
-return (
+
+    return (
         <FavoritesContext.Provider value={{ favorites, addToFavorites, removeFromFavorites }}>
             {children}
         </FavoritesContext.Provider>
     );
 }
+
 export const useFavorites = () => {
     const context = useContext(FavoritesContext);
     if (context === undefined) {

@@ -5,15 +5,20 @@ import bcrypt from "bcryptjs";
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
-        required: true,
+        required: [true, 'El email es requerido'],
         unique: true,
         trim: true,
         lowercase: true
     },
     password: {
         type: String,
-        required: true
-    }
+        required: [true, 'La contraseña es requerida'],
+        minlength: [6, 'La contraseña debe tener al menos 6 caracteres']
+    },
+    favorites: [{
+        type: Number,
+        ref: 'Movie'
+    }]
 }, {
     timestamps: true
 });
@@ -33,10 +38,16 @@ userSchema.pre('save', async function(next) {
 
 // Método para comparar contraseñas
 userSchema.methods.comparePassword = async function(candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.password);
+    try {
+        return await bcrypt.compare(candidatePassword, this.password);
+    } catch (error) {
+        throw new Error('Error al comparar contraseñas');
+    }
 };
 
-// Exportar el modelo User
-const User = mongoose.model("User", userSchema);
+// Eliminar el modelo si ya existe
+mongoose.models = {};
 
+// Crear y exportar el modelo
+const User = mongoose.model('User', userSchema);
 export default User;

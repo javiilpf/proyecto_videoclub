@@ -3,45 +3,26 @@ const API_URL = 'http://localhost:3000/api';
 // Función auxiliar para manejar las peticiones
 export const fetchAPI = async (endpoint, options = {}) => {
   try {
-    const defaultOptions = {
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    };
-
-    console.log('Fetching:', `${API_URL}${endpoint}`, {
-      ...defaultOptions,
-      ...options
-    });
-
     const response = await fetch(`${API_URL}${endpoint}`, {
-      ...defaultOptions,
       ...options,
       headers: {
-        ...defaultOptions.headers,
-        ...options.headers
-      }
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      credentials: 'include'
     });
 
-    console.log('Response status:', response.status);
-
-    // Para endpoints de verificación, manejamos el 401 de forma especial
-    if (endpoint === '/auth/verify' && response.status === 401) {
-      return { authenticated: false };
-    }
-
+    const data = await response.json();
+    
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.mensaje || 'Error en la petición');
+      throw {
+        status: response.status,
+        mensaje: data.mensaje || 'Error en la petición'
+      };
     }
 
-    return response.json();
+    return data;
   } catch (error) {
-    if (endpoint === '/auth/verify') {
-      return { authenticated: false };
-    }
     console.error('Error en fetchAPI:', error);
     throw error;
   }
@@ -79,11 +60,20 @@ export const verifyAuth = async () => {
 };
 
 export const register = async (userData) => {
-  const { confirmPassword, ...registerData } = userData; // Eliminamos confirmPassword
-  return fetchAPI('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(registerData)
-  });
+  try {
+    const { confirmPassword, ...registerData } = userData;
+    console.log('Datos de registro:', registerData);
+    
+    const response = await fetchAPI('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(registerData)
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Error en registro:', error);
+    throw error;
+  }
 };
 
 export const logout = async () => {

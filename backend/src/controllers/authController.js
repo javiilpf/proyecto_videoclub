@@ -4,6 +4,8 @@ import { config } from '../config/config.js';
 
 export const register = async (req, res) => {
     try {
+        console.log('Datos recibidos en el servidor:', req.body);
+        
         const { email, password } = req.body;
         
         if (!email || !password) {
@@ -12,33 +14,41 @@ export const register = async (req, res) => {
             });
         }
 
-        const existingUser = await User.findOne({ email });
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        // Buscar usuario existente
+        const existingUser = await User.findOne({ 
+            email: normalizedEmail 
+        }).exec();
+        
         if (existingUser) {
             return res.status(400).json({
                 mensaje: 'El email ya está registrado'
             });
         }
 
-        const user = await User.create({
-            email,
-            password
+        // Crear nuevo usuario
+        const user = new User({ 
+            email: normalizedEmail, 
+            password 
         });
+        
+        await user.save();
 
         const token = jwt.sign(
             { userId: user._id },
-            process.env.JWT_SECRET,
+            config.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
         res.cookie('token', token, {
             httpOnly: true,
-            secure: false, // Cambiado para desarrollo local
+            secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 24 * 60 * 60 * 1000,
-            path: '/'
+            maxAge: 24 * 60 * 60 * 1000
         });
 
-        res.status(201).json({
+        return res.status(201).json({
             mensaje: 'Usuario registrado exitosamente',
             user: {
                 id: user._id,
@@ -46,9 +56,9 @@ export const register = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error en registro:', error);
-        res.status(500).json({
-            mensaje: 'Error en registro',
+        console.error('Error en el registro:', error);
+        return res.status(500).json({
+            mensaje: 'Error en el servidor durante el registro',
             error: error.message
         });
     }

@@ -8,11 +8,9 @@ import reviewRoutes from './routes/reviews.js';
 
 const app = express();
 
-// Middleware
-app.use(cookieParser());
+// Middlewares (orden importante)
 app.use(express.json());
-
-// Configuración de CORS
+app.use(cookieParser());
 app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true,

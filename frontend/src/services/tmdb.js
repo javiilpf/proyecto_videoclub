@@ -85,9 +85,21 @@ export const getAllMovies = async (page = 1) => {
 
 export const getMovieDetails = async (movieId) => {
   try {
-    return await fetchFromAPI(`/movie/${movieId}`);
+    const [movieDetails, videosResponse] = await Promise.all([
+      fetchFromAPI(`/movie/${movieId}`),
+      fetchFromAPI(`/movie/${movieId}/videos`)
+    ]);
+
+    const trailers = videosResponse.results?.filter(
+      video => video.site === "YouTube" && video.type === "Trailer"
+    ) || [];
+
+    return {
+      ...movieDetails,
+      videos: trailers
+    };
   } catch (error) {
-    console.error('Error obteniendo detalles de la película:', error);
+    console.error('Error obteniendo detalles:', error);
     throw error;
   }
 };

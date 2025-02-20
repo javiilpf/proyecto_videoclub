@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../services/api';
-import { toast } from 'sonner';
+import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setIsAuthenticated } = useAuth();
+  const { showSuccessToast, showErrorToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,11 +23,11 @@ const Login = () => {
 
       await login(credentials);
       setIsAuthenticated(true);
-      toast.success('¡Bienvenido!');
+      showSuccessToast('¡Bienvenido!');
       navigate('/peliculas');
     } catch (error) {
       console.error('Error en login:', error);
-      toast.error('Error al iniciar sesión');
+      showErrorToast('Error al iniciar sesión');
     } finally {
       setLoading(false);
     }

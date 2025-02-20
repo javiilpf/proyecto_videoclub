@@ -12,17 +12,14 @@ const MovieDetail = () => {
   // Fetch movie details from tmdb api using movieID
   const fetchData = async () => {
     try {
-      const result = await getMovieDetails(id);
-      setMovie(result);
-
-      const trailerResult = await getMovieVideos(id);
-      if (trailerResult.results && trailerResult.results.length > 0) {
-        setTrailer(trailerResult.results[0]);
-      } else {
-        console.log("No se encontró ningún trailer");
+      const movieData = await getMovieDetails(id);
+      setMovie(movieData);
+      
+      if (movieData.videos && movieData.videos.length > 0) {
+        setTrailer(movieData.videos[0]);
       }
     } catch (error) {
-      console.error(error);
+      console.error('Error:', error);
     }
   };
 
@@ -99,6 +96,24 @@ const MovieDetail = () => {
             <p>No hay comentarios para esta película.</p>
           )}
         </div>
+        {movie.cast && movie.cast.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Reparto</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {movie.cast.map(actor => (
+                <div key={actor.id} className="text-center">
+                  <img
+                    src={actor.profile_path ? getImageUrl(actor.profile_path) : '/placeholder.png'}
+                    alt={actor.name}
+                    className="w-32 h-32 object-cover rounded-full mx-auto mb-2"
+                  />
+                  <h3 className="font-semibold">{actor.name}</h3>
+                  <p className="text-sm text-gray-400">{actor.character}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

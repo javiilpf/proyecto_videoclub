@@ -6,6 +6,13 @@ const videoSchema = new mongoose.Schema({
   type: String
 }, { _id: false });
 
+const actorSchema = new mongoose.Schema({
+  id: Number,
+  name: String,
+  character: String,
+  profile_path: String
+}, { _id: false });
+
 const movieSchema = new mongoose.Schema({
   tmdbId: { type: Number, required: true, unique: true },
   titulo: { type: String, required: true },
@@ -20,10 +27,15 @@ const movieSchema = new mongoose.Schema({
     nombre: String
   }],
   videos: [videoSchema],
-  actualizado: { 
-    type: Date, 
-    default: Date.now 
-  }
+  reparto: [actorSchema]
+}, {
+  timestamps: true
 });
 
-export default mongoose.model('Movie', movieSchema);
+// Limpiar modelos existentes
+if (mongoose.models.Movie) {
+  delete mongoose.models.Movie;
+}
+
+const Movie = mongoose.model('Movie', movieSchema);
+export default Movie;

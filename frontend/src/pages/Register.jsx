@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../services/api';
-import { toast } from 'sonner';
+import { useToast } from '../context/ToastContext';
 
 const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { showSuccessToast, showErrorToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,16 +21,23 @@ const Register = () => {
       };
 
       if (userData.password !== userData.confirmPassword) {
-        toast.error('Las contraseñas no coinciden');
+        showErrorToast('Las contraseñas no coinciden');
         return;
       }
 
-      await register(userData);
-      toast.success('Registro exitoso');
+      if (userData.password.length < 6) {
+        showErrorToast('La contraseña debe tener al menos 6 caracteres');
+        return;
+      }
+
+      const response = await register(userData);
+      console.log('Respuesta del registro:', response);
+      
+      showSuccessToast('Registro exitoso');
       navigate('/login');
     } catch (error) {
       console.error('Error en registro:', error);
-      toast.error('Error al registrar usuario');
+      showErrorToast(error.mensaje || 'Error al registrar usuario');
     } finally {
       setLoading(false);
     }

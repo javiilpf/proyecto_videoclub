@@ -1,18 +1,19 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { logout } from '../services/api';
-import { toast } from 'sonner';
+import { useToast } from '../context/ToastContext';
 
 const Navbar = () => {
   const { isAuthenticated, setIsAuthenticated } = useAuth();
+  const { toastLogOut, showErrorToast } = useToast();
 
   const handleLogout = async () => {
     try {
       await logout();
       setIsAuthenticated(false);
-      toast.success('Sesión cerrada');
+      toastLogOut();
     } catch (error) {
-      toast.error('Error al cerrar sesión');
+      showErrorToast("Error al cerrar sesión");
     }
   };
 
