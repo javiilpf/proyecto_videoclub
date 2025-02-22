@@ -8,14 +8,26 @@ import reviewRoutes from './routes/reviews.js';
 
 const app = express();
 
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://frontend:5173',
+    'http://localhost:3000'
+];
+
 // Middlewares (orden importante)
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('No permitido por CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
 // Middleware para debugging
